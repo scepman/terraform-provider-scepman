@@ -1,0 +1,54 @@
+# This workflow builds the product for all supported platforms and uploads the resulting
+# binaries as Actions artifacts. The workflow also uploads a build metadata file
+# (metadata.json) -- and a Terraform Registry manifest file (terraform-registry-manifest.json).
+#
+# Reference: https://github.com/hashicorp/terraform-provider-crt-example/blob/main/.github/workflows/README.md
+
+name: build
+
+# We default to running this workflow on every push to every branch.
+# This provides fast feedback when build issues occur, so they can be
+# fixed prior to being merged to the main branch.
+#
+# If you want to opt out of this, and only run the build on certain branches
+# please refer to the documentation on branch filtering here:
+#
+#   https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushbranchestagsbranches-ignoretags-ignore
+#
+on: [workflow_dispatch, push]
+
+permissions:
+  contents: read
+  id-token: write
+  packages: read
+
+env:
+  PKG_NAME: "terraform-provider-azuread"
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      # Install Tools
+      - name: Install aqua
+        uses: aquaproj/aqua-installer@d1fe50798dbadd4eb5b98957290ca175f6b4870f # v4.0.2
+        with:
+          aqua_version: v2.53.4
+        env:
+          AQUA_GITHUB_TOKEN: ${{github.token}} # include token to prevent GitHub rate limit
+
+      - name: Set up Go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run GoReleaser
+        run: |
+          goreleaser build --clean --snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

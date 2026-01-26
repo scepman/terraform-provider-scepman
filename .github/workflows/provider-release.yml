@@ -1,0 +1,49 @@
+name: goreleaser-release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          fetch-depth: 0
+
+      # Install Tools
+      - name: Install aqua, which install required tools
+        uses: aquaproj/aqua-installer@d1fe50798dbadd4eb5b98957290ca175f6b4870f # v4.0.2
+        with:
+          aqua_version: v2.53.4
+        env:
+          AQUA_GITHUB_TOKEN: ${{github.token}} # include token to prevent GitHub rate limit
+
+      - name: Set up Go
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6.3.0
+        id: import_gpg
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+
+      - name: Run GoReleaser
+        run: |
+          goreleaser release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          RELEASE_FLAG_LATEST: "true"
+          RELEASE_FLAG_PRERELEASE: "false"

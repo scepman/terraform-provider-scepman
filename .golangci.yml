@@ -1,23 +1,26 @@
 version: "2"
+run:
+  modules-download-mode: vendor
 linters:
   default: none
   enable:
-    - copyloopvar
-    - depguard
-    - durationcheck
+    - asciicheck
+    - bidichk
     - errcheck
-    - forcetypeassert
-    - godot
+    - gocritic
+    - govet
     - ineffassign
-    - makezero
     - misspell
-    - nilerr
-    - predeclared
+    - nakedret
+    - prealloc
+    - reassign
     - staticcheck
     - unconvert
     - unparam
     - unused
-    - usetesting
+  settings:
+    nakedret:
+      max-func-lines: 40
   exclusions:
     generated: lax
     presets:
@@ -29,30 +32,12 @@ linters:
       - third_party$
       - builtin$
       - examples$
-  settings:
-    depguard:
-      rules:
-        main:
-          list-mode: lax # a package is allowed if it doesn't match the deny list or the allow rule is more specific (longer) than the deny rule.
-          deny:
-            - pkg: "github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest" # prefix
-              desc: "Use github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-
-            - pkg: "github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource" # prefix
-              desc: "Use github.com/hashicorp/terraform-plugin-testing/helper/resource"
-
-            - pkg: "github.com/hashicorp/terraform-plugin-sdk/v2/terraform" # prefix
-              desc: "Use github.com/hashicorp/terraform-plugin-testing/terraform"
-
-            - pkg: "github.com/hashicorp/terraform-plugin-sdk/v2" # prefix
-              desc: "Use Terraform Plugin Framework"
-
 issues:
-  max-issues-per-linter: 0
   max-same-issues: 0
 formatters:
   enable:
     - gofmt
+    - goimports
   exclusions:
     generated: lax
     paths:
