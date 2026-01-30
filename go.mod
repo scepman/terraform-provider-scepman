@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/hashicorp/go-azure-helpers v0.75.1
-	github.com/hashicorp/go-azure-sdk/sdk v0.20260123.1165822
+	github.com/hashicorp/go-azure-sdk/sdk v0.20260129.1200123
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	github.com/hashicorp/terraform-plugin-go v0.29.0
