@@ -83,7 +83,7 @@ func (r *rootCertificateDataSource) Read(ctx context.Context, req datasource.Rea
 		return
 	}
 
-	certInfo, err := r.client.ScepmanClient.GetRootCaCertificate(ctx)
+	certInfo, err := r.client.UnauthenticatedClient.GetRootCaCertificate(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to get root certificate", err.Error())
 		return

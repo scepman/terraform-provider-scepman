@@ -201,14 +201,6 @@ func (p *ScepmanProvider) Configure(ctx context.Context, req provider.ConfigureR
 		)
 	}
 
-	if appId == "" {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("app_id"),
-			"Missing SCEPman App ID",
-			"The SCEPman App Id must be provided, either setting it as SCEPMAN_APP_ID environment variable or in the provider configuration.",
-		)
-	}
-
 	env, err = environments.FromName(environment)
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(
@@ -255,11 +247,10 @@ func (p *ScepmanProvider) Configure(ctx context.Context, req provider.ConfigureR
 
 	client, err := clientBuilder.Build(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Unable to create SCEPman client",
-			fmt.Sprintf("An unexpected error was encountered trying to create the SCEPman client: %s", err.Error()),
+		resp.Diagnostics.AddWarning(
+			"Unable to build authenticated API clients. Endpoints requiring authentication will not work.",
+			fmt.Sprintf("An error was encountered trying to build authenticated API clients: %s", err.Error()),
 		)
-		return
 	}
 
 	resp.DataSourceData = client

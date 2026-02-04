@@ -19,8 +19,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/pkg/errors"
 	"github.com/scepman/terraform-provider-scepman/internal/client/scepman"
+	"github.com/scepman/terraform-provider-scepman/internal/client/unauthenticated"
 	"github.com/scepman/terraform-provider-scepman/internal/clients"
 	"github.com/scepman/terraform-provider-scepman/internal/common"
+	typesinternal "github.com/scepman/terraform-provider-scepman/internal/types"
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
@@ -180,7 +182,13 @@ func (r *gsaTlsInspectionCertificateResource) Create(ctx context.Context, req re
 		CommonName:       plan.CommonName.ValueStringPointer(),
 		OrganizationName: plan.OrganizationName.ValueStringPointer(),
 	}
-	createCertResponse, certInfo, err := createGraphExternalCertificateAuthorityCertificate(ctx, &resp.Diagnostics, r.client.GraphClient, r.client.ScepmanClient, createCertRequestPayload)
+	createCertResponse, certInfo, err := createGraphExternalCertificateAuthorityCertificate(
+		ctx,
+		&resp.Diagnostics,
+		r.client.GraphClient,
+		r.client.ScepmanClient,
+		r.client.UnauthenticatedClient,
+		createCertRequestPayload)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to create certificate", err.Error())
 		return
@@ -297,7 +305,8 @@ func createGraphExternalCertificateAuthorityCertificate(
 	diag *diag.Diagnostics,
 	c *msgraph.Client,
 	sc *scepman.Client,
-	payload GraphExternalCertificateAuthorityCertificate) (*GraphExternalCertificateAuthorityCertificate, *scepman.CertificateInfo, error) {
+	uc *unauthenticated.Client,
+	payload GraphExternalCertificateAuthorityCertificate) (*GraphExternalCertificateAuthorityCertificate, *typesinternal.CertificateInfo, error) {
 	ctx, ctxCancel := context.WithTimeout(incomingContext, 2*time.Minute)
 	defer ctxCancel()
 
@@ -336,7 +345,7 @@ func createGraphExternalCertificateAuthorityCertificate(
 		return nil, nil, err
 	}
 
-	rootCaInfo, err := sc.GetRootCaCertificate(ctx)
+	rootCaInfo, err := uc.GetRootCaCertificate(ctx)
 	if err != nil {
 		diag.AddError("unable to get root certificate", err.Error())
 		return nil, nil, err

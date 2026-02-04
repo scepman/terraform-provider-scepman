@@ -10,9 +10,10 @@ import (
 
 	"github.com/hashicorp/go-azure-sdk/sdk/client"
 	"github.com/pkg/errors"
+	"github.com/scepman/terraform-provider-scepman/internal/types"
 )
 
-func (c *Client) IssueCertificateFromCsr(incomingContext context.Context, csrPayload []byte) (*CertificateInfo, error) {
+func (c *Client) IssueCertificateFromCsr(incomingContext context.Context, csrPayload []byte) (*types.CertificateInfo, error) {
 	ctx, ctxCancel := context.WithTimeout(incomingContext, 1*time.Minute)
 	defer ctxCancel()
 
@@ -54,7 +55,7 @@ func (c *Client) IssueCertificateFromCsr(incomingContext context.Context, csrPay
 		Bytes:   rawCert,
 	}
 
-	return &CertificateInfo{
+	return &types.CertificateInfo{
 		CertificateDer: rawCert,
 		CertificatePem: &pemBlock,
 		Certificate:    cert,
