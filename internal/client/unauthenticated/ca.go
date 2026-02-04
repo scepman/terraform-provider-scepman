@@ -1,4 +1,4 @@
-package scepman
+package unauthenticated
 
 import (
 	"context"
@@ -11,15 +11,10 @@ import (
 
 	"github.com/hashicorp/go-azure-sdk/sdk/client"
 	"github.com/pkg/errors"
+	"github.com/scepman/terraform-provider-scepman/internal/types"
 )
 
-type CertificateInfo struct {
-	CertificateDer []byte
-	CertificatePem *pem.Block
-	Certificate    *x509.Certificate
-}
-
-func (c *Client) GetRootCaCertificate(incomingCtx context.Context) (*CertificateInfo, error) {
+func (c *Client) GetRootCaCertificate(incomingCtx context.Context) (*types.CertificateInfo, error) {
 	ctx, ctxCancel := context.WithTimeout(incomingCtx, 30*time.Second)
 	defer ctxCancel()
 
@@ -56,7 +51,7 @@ func (c *Client) GetRootCaCertificate(incomingCtx context.Context) (*Certificate
 		Bytes:   rawCert,
 	}
 
-	return &CertificateInfo{
+	return &types.CertificateInfo{
 		CertificateDer: rawCert,
 		CertificatePem: &pemBlock,
 		Certificate:    cert,

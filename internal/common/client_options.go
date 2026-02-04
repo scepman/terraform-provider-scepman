@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/go-uuid"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/meta"
 	"github.com/scepman/terraform-provider-scepman/internal/client/scepman"
+	"github.com/scepman/terraform-provider-scepman/internal/client/unauthenticated"
 )
 
 type contextKey string
@@ -35,6 +36,12 @@ type ClientOptions struct {
 
 func (o ClientOptions) Configure(c *scepman.Client) {
 	c.SetAuthorizer(o.Authorizer)
+	c.SetUserAgent(o.userAgent(c.UserAgent))
+	c.AppendRequestMiddleware(o.requestLogger)
+	c.AppendResponseMiddleware(o.responseLogger)
+}
+
+func (o ClientOptions) ConfigureUnauthenticated(c *unauthenticated.Client) {
 	c.SetUserAgent(o.userAgent(c.UserAgent))
 	c.AppendRequestMiddleware(o.requestLogger)
 	c.AppendResponseMiddleware(o.responseLogger)

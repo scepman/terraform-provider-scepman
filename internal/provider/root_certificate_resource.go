@@ -95,7 +95,7 @@ func (r *rootCertificateResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	certInfo, err := r.client.ScepmanClient.GetRootCaCertificate(ctx)
+	certInfo, err := r.client.UnauthenticatedClient.GetRootCaCertificate(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to get root certificate", err.Error())
 		return
@@ -117,7 +117,7 @@ func (r *rootCertificateResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	rootGenerationStatus, err := r.client.ScepmanClient.CreateRootCaCertificate(ctx)
+	rootGenerationStatus, err := r.client.UnauthenticatedClient.CreateRootCaCertificate(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to create root certificate", err.Error())
 		return
@@ -128,7 +128,7 @@ func (r *rootCertificateResource) Create(ctx context.Context, req resource.Creat
 
 	time.Sleep(10 * time.Second)
 
-	certInfo, err := r.client.ScepmanClient.GetRootCaCertificate(ctx)
+	certInfo, err := r.client.UnauthenticatedClient.GetRootCaCertificate(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("unable to get root certificate", err.Error())
 		return

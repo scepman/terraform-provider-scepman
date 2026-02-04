@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/sdk/client/msgraph"
 	"github.com/hashicorp/go-azure-sdk/sdk/environments"
 	"github.com/scepman/terraform-provider-scepman/internal/client/scepman"
+	"github.com/scepman/terraform-provider-scepman/internal/client/unauthenticated"
 	"github.com/scepman/terraform-provider-scepman/internal/common"
 )
 
@@ -26,27 +27,41 @@ type ClientBuilder struct {
 
 // Build is a helper method which returns a fully instantiated *Client based on the auth Config's current settings.
 func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
+	var err error
 	// client declarations:
+	scepManEnv := environments.NewApiEndpoint("scepman", b.ScepmanEndpoint, &b.ScepmanAppId).WithResourceIdentifier(b.ScepmanAppId)
 	client := Client{
 		TenantID:         b.AuthConfig.TenantID,
 		ClientID:         b.AuthConfig.ClientID,
 		TerraformVersion: b.TerraformVersion,
+		ScepmanEndpoint:  b.ScepmanEndpoint,
+		ScepmanEnv:       scepManEnv,
+		Environment:      b.AuthConfig.Environment,
 	}
 
 	if b.AuthConfig == nil {
 		return nil, fmt.Errorf("building client: AuthConfig is nil")
 	}
 
-	scepManEnv := environments.NewApiEndpoint("scepman", b.ScepmanEndpoint, &b.ScepmanAppId).WithResourceIdentifier(b.ScepmanAppId)
+	client.UnauthenticatedClient, err = unauthenticated.NewClient(scepManEnv)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build unauthenticated client: %+v", err)
+	}
+	o := &common.ClientOptions{
+		Environment: client.Environment,
+		TenantID:    client.TenantID,
+
+		TerraformVersion: client.TerraformVersion,
+		ProviderVersion:  b.ProviderVersion,
+	}
+	o.ConfigureUnauthenticated(client.UnauthenticatedClient)
 
 	authorizer, err := auth.NewAuthorizerFromCredentials(ctx, *b.AuthConfig, scepManEnv)
 	if err != nil {
-		return nil, fmt.Errorf("unable to build authorize for SCEPman: %+v", err)
+		return &client, fmt.Errorf("unable to build authorizer for SCEPman: %+v", err)
 	}
 
-	client.Environment = b.AuthConfig.Environment
-	client.ScepmanEndpoint = b.ScepmanEndpoint
-	client.ScepmanEnv = scepManEnv
+	o.Authorizer = authorizer
 
 	// Obtain the tenant ID from Azure CLI
 	realAuthorizer := authorizer
@@ -61,15 +76,6 @@ func (b *ClientBuilder) Build(ctx context.Context) (*Client, error) {
 		if clientId, ok := environments.PublishedApis["MicrosoftAzureCli"]; ok && clientId != "" {
 			client.ClientID = clientId
 		}
-	}
-
-	o := &common.ClientOptions{
-		Authorizer:  authorizer,
-		Environment: client.Environment,
-		TenantID:    client.TenantID,
-
-		TerraformVersion: client.TerraformVersion,
-		ProviderVersion:  b.ProviderVersion,
 	}
 
 	client.ScepmanClient, err = scepman.NewClient(scepManEnv)
