@@ -3,7 +3,7 @@ module github.com/scepman/terraform-provider-scepman
 go 1.25.5
 
 require (
-	github.com/hashicorp/go-azure-helpers v0.76.1
+	github.com/hashicorp/go-azure-helpers v0.76.2
 	github.com/hashicorp/go-azure-sdk/sdk v0.20260129.1200123
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/hashicorp/terraform-plugin-framework v1.17.0
