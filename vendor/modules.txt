@@ -6,11 +6,11 @@ github.com/fatih/color
 github.com/golang/protobuf/ptypes/empty
 # github.com/hashicorp/errwrap v1.1.0
 ## explicit
-# github.com/hashicorp/go-azure-helpers v0.76.1
+# github.com/hashicorp/go-azure-helpers v0.76.2
 ## explicit; go 1.25.5
 github.com/hashicorp/go-azure-helpers/lang/pointer
-# github.com/hashicorp/go-azure-sdk/sdk v0.20260129.1200123
-## explicit; go 1.24.1
+# github.com/hashicorp/go-azure-sdk/sdk v0.20260504.1170848
+## explicit; go 1.25.5
 github.com/hashicorp/go-azure-sdk/sdk/auth
 github.com/hashicorp/go-azure-sdk/sdk/claims
 github.com/hashicorp/go-azure-sdk/sdk/client
