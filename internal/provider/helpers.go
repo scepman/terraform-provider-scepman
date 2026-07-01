@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -24,6 +26,29 @@ func decodeCertificate(clientCertificate string) ([]byte, error) {
 		pfx = out[:n]
 	}
 	return pfx, nil
+}
+
+// getOidcToken resolves the OIDC assertion token, reading it from a file when
+// oidcTokenFilePath is set. If both a direct token and a file are provided,
+// their contents must match.
+func getOidcToken(oidcToken string, oidcTokenFilePath string) (string, error) {
+	if oidcTokenFilePath != "" {
+		fileToken, err := os.ReadFile(oidcTokenFilePath)
+		if err != nil {
+			return "", fmt.Errorf("reading OIDC token from file %q: %v", oidcTokenFilePath, err)
+		}
+
+		fileTokenStr := strings.TrimSpace(string(fileToken))
+		if oidcToken != "" && oidcToken != fileTokenStr {
+			return "", fmt.Errorf("mismatch between supplied OIDC token and supplied OIDC token file contents - please either remove one or ensure they match")
+		}
+
+		if fileTokenStr != "" {
+			oidcToken = fileTokenStr
+		}
+	}
+
+	return oidcToken, nil
 }
 
 func validateAndMarshalCsr(diag *diag.Diagnostics, csr types.String) ([]byte, error) {

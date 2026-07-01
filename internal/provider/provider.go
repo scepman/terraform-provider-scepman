@@ -48,9 +48,16 @@ type ScepmanProviderModel struct {
 	ClientCertificatePath     types.String `tfsdk:"client_certificate_path"`
 	ClientSecret              types.String `tfsdk:"client_secret"`
 	UseOidc                   types.Bool   `tfsdk:"use_oidc"`
-	UseCli                    types.Bool   `tfsdk:"use_cli"`
-	UseMsi                    types.Bool   `tfsdk:"use_msi"`
-	MsiEndpoint               types.String `tfsdk:"msi_endpoint"`
+
+	OidcToken                      types.String `tfsdk:"oidc_token"`
+	OidcTokenFilePath              types.String `tfsdk:"oidc_token_file_path"`
+	OidcRequestToken               types.String `tfsdk:"oidc_request_token"`
+	OidcRequestUrl                 types.String `tfsdk:"oidc_request_url"`
+	AdoPipelineServiceConnectionId types.String `tfsdk:"ado_pipeline_service_connection_id"`
+
+	UseCli      types.Bool   `tfsdk:"use_cli"`
+	UseMsi      types.Bool   `tfsdk:"use_msi"`
+	MsiEndpoint types.String `tfsdk:"msi_endpoint"`
 }
 
 func (p *ScepmanProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -101,6 +108,26 @@ It also integrates with Entra Global Secure Access (GSA) to manage TLS Inspectio
 			},
 			"use_oidc": schema.BoolAttribute{
 				MarkdownDescription: "Use OpenID Connect for authentication",
+				Optional:            true,
+			},
+			"oidc_token": schema.StringAttribute{
+				MarkdownDescription: "The ID token for use when authenticating as a Service Principal using OpenID Connect.",
+				Optional:            true,
+			},
+			"oidc_token_file_path": schema.StringAttribute{
+				MarkdownDescription: "The path to a file containing an ID token for use when authenticating as a Service Principal using OpenID Connect.",
+				Optional:            true,
+			},
+			"oidc_request_token": schema.StringAttribute{
+				MarkdownDescription: "The bearer token for the request to the OIDC provider. For use when authenticating as a Service Principal using OpenID Connect.",
+				Optional:            true,
+			},
+			"oidc_request_url": schema.StringAttribute{
+				MarkdownDescription: "The URL for the OIDC provider from which to request an ID token. For use when authenticating as a Service Principal using OpenID Connect.",
+				Optional:            true,
+			},
+			"ado_pipeline_service_connection_id": schema.StringAttribute{
+				MarkdownDescription: "The Azure DevOps Pipeline Service Connection ID. For use when authenticating as a Service Principal using OpenID Connect from an Azure DevOps Pipeline.",
 				Optional:            true,
 			},
 			"use_cli": schema.BoolAttribute{
@@ -193,6 +220,21 @@ func (p *ScepmanProvider) Configure(ctx context.Context, req provider.ConfigureR
 	useOidc := getAttributeBool(data.UseOidc, "SCEPMAN_USE_OIDC", "ARM_USE_OIDC")
 	useMsi := getAttributeBool(data.UseMsi, "SCEPMAN_USE_MSI", "ARM_USE_MSI")
 
+	oidcRequestUrl := getAttributeString(data.OidcRequestUrl, "SCEPMAN_OIDC_REQUEST_URL", "ARM_OIDC_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_URL", "SYSTEM_OIDCREQUESTURI")
+	oidcRequestToken := getAttributeString(data.OidcRequestToken, "SCEPMAN_OIDC_REQUEST_TOKEN", "ARM_OIDC_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "SYSTEM_ACCESSTOKEN")
+	adoServiceConnectionId := getAttributeString(data.AdoPipelineServiceConnectionId, "SCEPMAN_ADO_PIPELINE_SERVICE_CONNECTION_ID", "ARM_ADO_PIPELINE_SERVICE_CONNECTION_ID", "ARM_OIDC_AZURE_SERVICE_CONNECTION_ID")
+
+	oidcToken := getAttributeString(data.OidcToken, "SCEPMAN_OIDC_TOKEN", "ARM_OIDC_TOKEN")
+	oidcTokenFilePath := getAttributeString(data.OidcTokenFilePath, "SCEPMAN_OIDC_TOKEN_FILE_PATH", "ARM_OIDC_TOKEN_FILE_PATH")
+	oidcToken, err = getOidcToken(oidcToken, oidcTokenFilePath)
+	if err != nil {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("oidc_token_file_path"),
+			"Unable to read OIDC token",
+			err.Error(),
+		)
+	}
+
 	if endpoint == "" {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("endpoint"),
@@ -226,6 +268,11 @@ func (p *ScepmanProvider) Configure(ctx context.Context, req provider.ConfigureR
 		ClientSecret:              clientSecret,
 
 		CustomManagedIdentityEndpoint: msiEndpoint,
+
+		OIDCAssertionToken:             oidcToken,
+		OIDCTokenRequestURL:            oidcRequestUrl,
+		OIDCTokenRequestToken:          oidcRequestToken,
+		ADOPipelineServiceConnectionID: adoServiceConnectionId,
 
 		EnableAuthenticatingUsingAzureCLI:          useAzCli,
 		EnableAuthenticatingUsingClientCertificate: true,
