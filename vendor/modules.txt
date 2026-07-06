@@ -4,7 +4,7 @@ github.com/fatih/color
 # github.com/golang/protobuf v1.5.4
 ## explicit; go 1.17
 github.com/golang/protobuf/ptypes/empty
-# github.com/hashicorp/go-azure-helpers v0.80.0
+# github.com/hashicorp/go-azure-helpers v0.81.0
 ## explicit; go 1.25.5
 github.com/hashicorp/go-azure-helpers/lang/pointer
 # github.com/hashicorp/go-azure-sdk/sdk v0.20260629.1154953
