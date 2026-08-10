@@ -4,11 +4,11 @@ github.com/fatih/color
 # github.com/golang/protobuf v1.5.4
 ## explicit; go 1.17
 github.com/golang/protobuf/ptypes/empty
-# github.com/hashicorp/go-azure-helpers v0.80.0
-## explicit; go 1.25.5
+# github.com/hashicorp/go-azure-helpers v0.81.1
+## explicit; go 1.26.4
 github.com/hashicorp/go-azure-helpers/lang/pointer
-# github.com/hashicorp/go-azure-sdk/sdk v0.20260629.1154953
-## explicit; go 1.26.3
+# github.com/hashicorp/go-azure-sdk/sdk v0.20260804.1150411
+## explicit; go 1.26.5
 github.com/hashicorp/go-azure-sdk/sdk/auth
 github.com/hashicorp/go-azure-sdk/sdk/claims
 github.com/hashicorp/go-azure-sdk/sdk/client
@@ -154,7 +154,7 @@ github.com/vmihailenco/msgpack/v5/msgpcode
 github.com/vmihailenco/tagparser/v2
 github.com/vmihailenco/tagparser/v2/internal
 github.com/vmihailenco/tagparser/v2/internal/parser
-# golang.org/x/crypto v0.53.0
+# golang.org/x/crypto v0.54.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/pbkdf2
 # golang.org/x/net v0.56.0
@@ -171,11 +171,11 @@ golang.org/x/net/trace
 ## explicit; go 1.25.0
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
-# golang.org/x/sys v0.46.0
+# golang.org/x/sys v0.47.0
 ## explicit; go 1.25.0
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.38.0
+# golang.org/x/text v0.40.0
 ## explicit; go 1.25.0
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
