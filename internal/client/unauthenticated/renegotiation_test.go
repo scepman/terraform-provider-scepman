@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -57,6 +58,12 @@ func TestGetRootCaCertificateRenegotiation(t *testing.T) {
 			if tc.disableRenegotiate {
 				transport.TLSClientConfig.Renegotiation = tls.RenegotiateNever
 			}
+			var certificateRequests atomic.Int32
+			transport.TLSClientConfig.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				certificateRequests.Add(1)
+				// Match the unauthenticated client's default response: no certificate.
+				return &tls.Certificate{}, nil
+			}
 
 			// ACCEPT can be printed before the listening socket is ready. Establish
 			// the test's only TCP connection first, without probing and consuming it.
@@ -79,6 +86,9 @@ func TestGetRootCaCertificateRenegotiation(t *testing.T) {
 
 			output.wait(t, ctx, "handshake")
 			output.wait(t, ctx, "request")
+			if got := certificateRequests.Load(); got != 0 {
+				t.Fatalf("initial handshake requested a client certificate %d times; want none before renegotiation", got)
+			}
 			for i := 0; i < tc.renegotiations; i++ {
 				if _, err := io.WriteString(stdin, "R\n"); err != nil {
 					t.Fatal(err)
@@ -88,6 +98,9 @@ func TestGetRootCaCertificateRenegotiation(t *testing.T) {
 				}
 				// Do not interleave response data with the TLS handshake.
 				output.wait(t, ctx, "handshake")
+				if got := certificateRequests.Load(); got != int32(i+1) {
+					t.Fatalf("client certificate requests after renegotiation = %d, want %d", got, i+1)
+				}
 			}
 			if !tc.wantError {
 				response := []byte(fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: application/pkix-cert\r\nContent-Length: %d\r\nConnection: close\r\n\r\n", len(cert.Leaf.Raw)))
@@ -99,6 +112,9 @@ func TestGetRootCaCertificateRenegotiation(t *testing.T) {
 			select {
 			case got := <-results:
 				if tc.wantError {
+					// Go's handleRenegotiation sends the same no_renegotiation alert
+					// for RenegotiateNever and an exhausted RenegotiateOnceAsClient.
+					// Keep the exact error check so unrelated failures cannot pass.
 					if got.info != nil || got.err == nil || !strings.Contains(got.err.Error(), "tls: no renegotiation") {
 						t.Fatalf("expected tls: no renegotiation, got %v", got.err)
 					}
@@ -139,6 +155,10 @@ func startOpenSSL(t *testing.T, ctx context.Context, openssl string, cert tls.Ce
 	if err := listener.Close(); err != nil {
 		t.Fatal(err)
 	}
+	// Do not use -verify: that would request a certificate in the initial
+	// handshake. Uppercase R enables optional client authentication later;
+	// lowercase r would only renegotiate without requesting a certificate.
+	// https://docs.openssl.org/3.0/man1/openssl-s_server/#connected-commands
 	cmd := exec.CommandContext(ctx, openssl, "s_server", "-accept", address,
 		"-cert", certPath, "-key", keyPath, "-tls1_2", "-state", "-no_ticket", "-naccept", "1")
 	output := &opensslOutput{events: make(chan string, 16)}

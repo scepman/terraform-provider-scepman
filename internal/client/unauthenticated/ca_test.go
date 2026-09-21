@@ -139,6 +139,8 @@ func TestGetRootCaCertificateRequiresClientCertificate(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
 	info, err := c.GetRootCaCertificate(ctx)
+	// The CA transport uses TLS 1.2: Go sends handshake_failure when the
+	// client omits a required certificate. certificate_required is TLS 1.3 only.
 	if info != nil || err == nil || !strings.Contains(err.Error(), "does not supply a TLS client certificate") || !strings.Contains(err.Error(), "handshake failure") {
 		t.Fatalf("expected an actionable client-certificate error preserving the TLS failure, got %v", err)
 	}
