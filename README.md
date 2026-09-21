@@ -33,6 +33,20 @@ provider "scepman" {
 }
 ```
 
+### Root CA TLS compatibility
+
+The unauthenticated CA client (root certificate retrieval and initial root creation)
+uses HTTPS with TLS 1.2 and HTTP/1.1, permitting one server-requested TLS
+renegotiation per connection. This supports SCEPman's documented
+[`OptionalInteractiveUser` client-certificate mode](https://docs.scepman.com/certificate-management/api-certificates/scepmanclient#enable-est-endpoint)
+without changing the deployment's EST/mTLS settings. App Service's renegotiation
+mode is [incompatible with TLS 1.3 and HTTP/2](https://learn.microsoft.com/en-us/azure/app-service/app-service-web-configure-tls-mutual-auth#client-certificate-and-tls-renegotiation).
+
+Hostname and certificate-chain verification remain enabled; there is no HTTP
+fallback. The CA endpoint must allow access without a client certificate, since
+the provider does not supply one. Authenticated SCEPman, Microsoft Graph, and
+token acquisition clients retain their existing TLS behavior.
+
 ## Building from Source
 
 ```shell
@@ -42,6 +56,18 @@ go install
 ```
 
 ## Development
+
+Run local unit and TLS regression tests with `go test ./...`. These tests do not
+need a SCEPman deployment or credentials. Put OpenSSL 3.x on `PATH` to include the
+real TLS renegotiation test (skipped if unavailable or a different major version
+is found). CI checks this prerequisite before running the tests. The fixture
+reproduces the original error with renegotiation disabled, retrieves a DER CA
+certificate after an optional client-certificate request, and rejects a second
+renegotiation on the same connection.
+
+These local tests reproduce the TLS behavior, not a complete App Service
+deployment. Before release, also verify `scepman_root_certificate` against a live
+SCEPman installation with `OptionalInteractiveUser` enabled.
 
 Generate documentation:
 
