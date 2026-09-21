@@ -31,14 +31,14 @@ func (c *Client) GetRootCaCertificate(incomingCtx context.Context) (*types.Certi
 	var response *client.Response
 	response, err = c.Execute(ctx, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing request")
+		return nil, errors.Wrap(err, "executing unauthenticated GET /ca (the provider does not supply a TLS client certificate; /ca must allow requests without one)")
 	}
+	defer response.Body.Close()
 
 	rawCert, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading response body")
 	}
-	response.Body.Close()
 
 	cert, err := x509.ParseCertificate(rawCert)
 	if err != nil {
