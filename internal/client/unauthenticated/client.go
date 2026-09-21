@@ -5,8 +5,13 @@ package unauthenticated
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
+	"net/http"
 	"net/url"
+	"runtime"
+	"time"
 
 	"github.com/hashicorp/go-azure-sdk/sdk/client"
 	"github.com/hashicorp/go-azure-sdk/sdk/environments"
@@ -32,6 +37,32 @@ func NewClient(api environments.Api) (*Client, error) {
 	}
 	baseUri := *endpoint
 	baseClient := client.NewClient(baseUri, "ScepMan", "")
+
+	// SCEPman's OptionalInteractiveUser client-certificate mode requests TLS
+	// renegotiation after receiving the HTTP request. App Service cannot use
+	// TLS 1.3 or HTTP/2 in this mode. Allow only one renegotiation per connection,
+	// and keep this compatibility transport local to the unauthenticated CA API.
+	// https://learn.microsoft.com/azure/app-service/app-service-web-configure-tls-mutual-auth#client-certificate-and-tls-renegotiation
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	baseClient.SetTransport(&http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			d := &net.Dialer{Resolver: &net.Resolver{}}
+			return d.DialContext(ctx, network, addr)
+		},
+		TLSClientConfig: &tls.Config{
+			MinVersion:    tls.VersionTLS12,
+			MaxVersion:    tls.VersionTLS12,
+			Renegotiation: tls.RenegotiateOnceAsClient,
+		},
+		Protocols:             protocols,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConnsPerHost:   runtime.GOMAXPROCS(0) + 1,
+	})
 	return &Client{
 		Client:        baseClient,
 		EnableRetries: true,

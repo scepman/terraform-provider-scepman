@@ -43,6 +43,11 @@ go install
 
 ## Development
 
+Run local unit and TLS regression tests with `go test ./...`. These tests do not
+need a SCEPman deployment or credentials. Put OpenSSL 3.x on `PATH` to include the
+real TLS renegotiation test (skipped if unavailable or a different major version
+is found). CI checks this prerequisite before running the tests.
+
 Generate documentation:
 
 ```shell
